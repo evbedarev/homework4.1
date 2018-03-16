@@ -64,13 +64,11 @@ public class CollectionUtils {
 
 
     public static <T extends Comparable<T>> List<T> range(List<? extends T> list, T min, T max) {
-        List<T> tmpList = new ArrayList<>(list);
-        for (T element:list) {
-            if ((element.compareTo(min) < 0) || (element.compareTo(max) > 0)) {
-                tmpList.remove(element);
-            }
-        }
-        return tmpList;
+        return list.stream()
+                .sorted()
+                .filter(elm -> elm.compareTo(min) >= 0)
+                .filter(elm -> elm.compareTo(max) <= 0)
+                .collect(Collectors.toList());
     }
 
     public static <T extends Comparable<T>> List<T> range(List<? extends T> list, T min, T max, Comparator<? super T> comparator) {

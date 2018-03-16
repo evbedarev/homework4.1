@@ -5,21 +5,21 @@ import java.util.Map;
 /**
  * Дополнить. Параметризовать. Создать класс, реализующий интерфейс.
  */
-public interface CountMap {
+public interface CountMap<T> {
     /**
      * добавляет элемент в этот контейнер.
      */
-    void add(Object o);
+    void add(T o);
 
     /**
      * Возвращает количество добавлений данного элемента
      */
-    int getCount(Object o);
+    int getCount(T o);
 
     /**
      * Удаляет элемент и контейнера и возвращает количество его добавлений(до удаления)
      */
-    int remove(Object o);
+    int remove(T o);
 
     /**
      * количество разных элементов
