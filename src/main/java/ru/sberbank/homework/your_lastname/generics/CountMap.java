@@ -1,11 +1,7 @@
 package ru.sberbank.homework.your_lastname.generics;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Дополнить. Параметризовать. Создать класс, реализующий интерфейс.
@@ -44,14 +40,14 @@ public interface CountMap<T> {
     /**
      * Тот же самый контракт как и toMap(), только всю информацию записать в destination
      */
-    void toMap(Map destination);
+    void toMap(Map<T, Integer> destination);
 
 }
 
-class CreateCountMap <T> implements CountMap<T> {
-    private Map<T, Long> countMap = new HashMap<>();
+class CustomCountMap<T> implements CountMap<T> {
+    private Map<T, Integer> countMap = new HashMap<>();
 
-    public CreateCountMap() {
+    public CustomCountMap() {
     }
 
     public void add(T o) {
@@ -63,37 +59,46 @@ class CreateCountMap <T> implements CountMap<T> {
         }
 
         if (!countMap.containsKey(o)) {
-            countMap.put(o, 1L);
+            countMap.put(o, 1);
         }
     }
 
     public int getCount(T o) {
-       return countMap.keySet()
-               .stream()
-               .filter( elm -> elm == o)
-               .collect(Collectors.toList()).size();
-    }
 
-    public int remove(T o) {
-        Long valueCount = countMap.entrySet()
+        return countMap.entrySet()
                 .stream().filter( elm -> elm.getKey().equals(o))
                 .map(Map.Entry::getValue)
                 .findFirst()
-                .get();
+                .orElse(0);
 
-        if (valueCount == 1L) {
+    }
+
+    public int remove(T o) {
+
+        Integer valueCount = countMap.entrySet()
+                .stream()
+                .filter( elm -> elm.getKey().equals(o))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(0);
+
+        if (valueCount == 1) {
             countMap.remove(o);
+            return 1;
+        }
+
+        if (valueCount == 0) {
             return 0;
         }
 
-        if (valueCount > 1L)
+        if (valueCount > 1)
         countMap.entrySet()
                 .stream()
                 .filter(elm -> elm.getKey() == o)
                 .forEach( e -> e.setValue(e.getValue() - 1));
 
 
-        return valueCount.intValue() - 1;
+        return valueCount;
     }
 
     public  int size() {
@@ -101,6 +106,35 @@ class CreateCountMap <T> implements CountMap<T> {
 
     }
 
+    public void addAll(CountMap<T> source) {
+        addMap(source.toMap(), countMap);
+    }
 
+    public Map<T, Integer> toMap() {
+        return countMap;
+    }
+
+    public void toMap(Map<T, Integer> destination) {
+        addMap(countMap, destination);
+    }
+
+    private void addMap(Map<T, Integer> source, Map<T, Integer> consumer) {
+        for (Map.Entry<T, Integer> entry: source.entrySet()) {
+
+            if (consumer.containsKey(entry.getKey())) {
+
+                consumer.entrySet()
+                        .stream()
+                        .filter(elm -> elm.getKey() == entry.getKey())
+                        .forEach(e -> e.setValue(e.getValue() + entry.getValue()));
+            }
+
+            if (!consumer.containsKey(entry.getKey())) {
+                consumer.put(entry.getKey(), entry.getValue());
+            }
+
+        }
+
+    }
 
 }
