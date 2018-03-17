@@ -28,6 +28,7 @@ public class InMemoryRouteService extends RouteService<City, Route<City>> {
             route = super.getRoute(from, to);
             routeHashMap.put(key, route);
         }
+
         return route;
     }
 
@@ -38,6 +39,7 @@ public class InMemoryRouteService extends RouteService<City, Route<City>> {
 
     @Override
     protected Route<City> createRoute(List<City> cities) {
+
         return new Route<>(UUID.randomUUID().toString(), cities);
     }
 }
