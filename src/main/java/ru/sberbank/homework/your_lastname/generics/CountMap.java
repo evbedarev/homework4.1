@@ -49,26 +49,22 @@ public interface CountMap<T> {
 }
 
 class CreateCountMap <T> implements CountMap<T> {
-    private Map<T, Integer> countMap = new HashMap<>();
+    private Map<T, Long> countMap = new HashMap<>();
 
     public CreateCountMap() {
     }
 
     public void add(T o) {
-        Long value = countMap.entrySet()
-                .stream()
-                .filter(elm -> elm == o)
-                .count();
-        if (value < 1) {
-            value = 1L;
-        }
         if (countMap.containsKey(o)) {
             countMap.entrySet()
                     .stream()
-                    .filter(elm -> elm == o)
+                    .filter(elm -> elm.getKey().equals(o))
                     .forEach( e -> e.setValue(e.getValue() + 1) );
         }
-        countMap.put(o, value.intValue());
+
+        if (!countMap.containsKey(o)) {
+            countMap.put(o, 1L);
+        }
     }
 
     public int getCount(T o) {
@@ -79,17 +75,30 @@ class CreateCountMap <T> implements CountMap<T> {
     }
 
     public int remove(T o) {
-        countMap.remove(o);
+        Long valueCount = countMap.entrySet()
+                .stream().filter( elm -> elm.getKey().equals(o))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .get();
 
+        if (valueCount == 1L) {
+            countMap.remove(o);
+            return 0;
+        }
+
+        if (valueCount > 1L)
         countMap.entrySet()
                 .stream()
-                .filter(elm -> elm == o)
-                .forEach( e -> e.setValue(e.getValue() - 1) );
-        return getCount(o) + 1;
+                .filter(elm -> elm.getKey() == o)
+                .forEach( e -> e.setValue(e.getValue() - 1));
+
+
+        return valueCount.intValue() - 1;
     }
 
     public  int size() {
-        return countMap.size();
+        return countMap.keySet().size();
+
     }
 
 
