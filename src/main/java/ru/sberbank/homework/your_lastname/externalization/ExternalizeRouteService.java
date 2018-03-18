@@ -1,27 +1,25 @@
-package ru.sberbank.homework.your_lastname.serialization;
+package ru.sberbank.homework.your_lastname.externalization;
 
 import ru.sberbank.homework.common.CachePathProvider;
 import ru.sberbank.homework.common.City;
 import ru.sberbank.homework.common.Route;
 import ru.sberbank.homework.common.RouteService;
 
+import java.io.*;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import java.io.*;
-import java.util.*;
 
-
-public class SerializeRouteService extends RouteService<City, Route<City>> {
+public class ExternalizeRouteService extends RouteService<City, Route<City>> {
     private HashMap<String, String> routeHashMap = new HashMap<>();
     private String newFilePath;
     private String uuid;
     private Long timeSerialize;
     private Long timeDeserialize;
 
-    public SerializeRouteService(CachePathProvider cachePathProvider) {
+    public ExternalizeRouteService(CachePathProvider cachePathProvider) {
         super(cachePathProvider, false);
     }
 
@@ -38,7 +36,7 @@ public class SerializeRouteService extends RouteService<City, Route<City>> {
         }
 
         if (filePath != null) {
-            route = readSerialize(filePath);
+            route = readExternalize(filePath);
         }
         return route;
     }
@@ -47,17 +45,13 @@ public class SerializeRouteService extends RouteService<City, Route<City>> {
         return routeHashMap;
     }
 
-    private void serialize (String pathToFile, List<City> cities, String randomUUID ) {
-        Long beginSerialize;
-        try {
-            beginSerialize = System.currentTimeMillis();
-            ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(pathToFile));
+    private void externalize (List<City> cities, String filePath) {
 
-            out.writeObject(randomUUID);
-            for (City city:cities) {
-                out.writeObject(city);
-            }
-            out.close();
+        try {
+            Long beginSerialize = System.currentTimeMillis();
+            ExternalizeRoute fileExternalize = new ExternalizeRoute(cities, uuid);
+            ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filePath));
+            fileExternalize.writeExternal(out);
             timeSerialize =System.currentTimeMillis()- beginSerialize;
         } catch (IOException exception) {
             exception.printStackTrace();
@@ -65,25 +59,16 @@ public class SerializeRouteService extends RouteService<City, Route<City>> {
 
     }
 
-    private Route<City> readSerialize(String pathToFile) {
-        List<City> cities = new LinkedList<>();
+    private Route<City> readExternalize(String pathToFile) {
 
         try {
             Long beginDeserialize = System.currentTimeMillis();
+            ExternalizeRoute fileExternalize = new ExternalizeRoute();
             ObjectInputStream in = new ObjectInputStream(new FileInputStream(pathToFile));
-            String uuid = (String) in.readObject();
-
-            while (true) {
-                try {
-                    City temp1 = (City) in.readObject();
-                    cities.add(temp1);
-                } catch (EOFException exception) {
-                    break;
-                }
-            }
-
+            fileExternalize.readExternal(in);
+            Route<City> route = new Route<>(uuid,fileExternalize.getCityList());
             timeDeserialize = System.currentTimeMillis() - beginDeserialize;
-            return new Route<>(uuid, cities);
+            return route;
 
         } catch (IOException | ClassNotFoundException exception) {
             exception.printStackTrace();
@@ -100,7 +85,7 @@ public class SerializeRouteService extends RouteService<City, Route<City>> {
     protected Route<City> createRoute(List<City> cities) {
         uuid = UUID.randomUUID().toString();
         Route route = new Route<>(uuid, cities);
-        serialize(newFilePath, cities, uuid);
+        externalize(cities, newFilePath);
         return route;
     }
 
