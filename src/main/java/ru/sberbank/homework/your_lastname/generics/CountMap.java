@@ -47,7 +47,7 @@ public interface CountMap<T> {
 class CustomCountMap<T> implements CountMap<T> {
     private Map<T, Integer> countMap = new HashMap<>();
 
-    public CustomCountMap() {
+    CustomCountMap() {
     }
 
     public void add(T o) {

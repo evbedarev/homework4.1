@@ -5,7 +5,6 @@ import ru.sberbank.homework.common.City;
 import ru.sberbank.homework.common.Route;
 import ru.sberbank.homework.common.RouteService;
 
-import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +16,10 @@ import java.util.*;
 
 public class SerializeRouteService extends RouteService<City, Route<City>> {
     private HashMap<String, String> routeHashMap = new HashMap<>();
+    private String newFilePath;
+    private String uuid;
+    private Long timeSerialize;
+    private Long timeDeserialize;
 
     public SerializeRouteService(CachePathProvider cachePathProvider) {
         super(cachePathProvider, false);
@@ -25,8 +28,18 @@ public class SerializeRouteService extends RouteService<City, Route<City>> {
     @Override
     public Route<City> getRoute(String from, String to) {
         String key = from + "_" + to;
-        Route<City> route = super.getRoute(from, to);
-        routeHashMap.put(key, "serialize.dat");
+        String filePath = routeHashMap.get(key);
+        Route<City> route = null;
+
+        if (filePath == null) {
+            newFilePath = pathProvider.getCacheDirectoryPath() + File.separatorChar + from + "_" + to + ".dat";
+            route = super.getRoute(from, to);
+            routeHashMap.put(key, newFilePath);
+        }
+
+        if (filePath != null) {
+            route = readSerialize(filePath);
+        }
         return route;
     }
 
@@ -34,36 +47,47 @@ public class SerializeRouteService extends RouteService<City, Route<City>> {
         return routeHashMap;
     }
 
-    private void serialize (String pathToFile, List<City> cities ) {
+    private void serialize (String pathToFile, List<City> cities, String randomUUID ) {
+        Long beginSerialize;
         try {
+            beginSerialize = System.currentTimeMillis();
             ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(pathToFile));
+
+            out.writeObject(randomUUID);
             for (City city:cities) {
                 out.writeObject(city);
             }
-            System.out.println("Write class to file: " + pathToFile);
             out.close();
-
+            timeSerialize =System.currentTimeMillis()- beginSerialize;
         } catch (IOException exception) {
             exception.printStackTrace();
         }
+
     }
 
-    public void readSerilize (String pathToFile) {
+    private Route<City> readSerialize(String pathToFile) {
+        List<City> cities = new LinkedList<>();
+
         try {
-            ObjectInputStream in =  new ObjectInputStream (new FileInputStream(pathToFile));
+            Long beginDeserialize = System.currentTimeMillis();
+            ObjectInputStream in = new ObjectInputStream(new FileInputStream(pathToFile));
+            String uuid = (String) in.readObject();
+
             while (true) {
                 try {
                     City temp1 = (City) in.readObject();
-                    System.out.println(temp1.toString());
+                    cities.add(temp1);
                 } catch (EOFException exception) {
                     break;
                 }
             }
+            timeDeserialize = System.currentTimeMillis() - beginDeserialize;
+            return new Route<>(uuid, cities);
 
         } catch (IOException | ClassNotFoundException exception) {
             exception.printStackTrace();
         }
-
+        return null;
     }
 
     @Override
@@ -73,8 +97,21 @@ public class SerializeRouteService extends RouteService<City, Route<City>> {
 
     @Override
     protected Route<City> createRoute(List<City> cities) {
-        Route route = new  Route<>(UUID.randomUUID().toString(), cities);
-        serialize("serialize.dat", cities);
+        uuid = UUID.randomUUID().toString();
+        Route route = new Route<>(uuid, cities);
+        serialize(newFilePath, cities, uuid);
         return route;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public Long getTimeSerialize() {
+        return timeSerialize;
+    }
+
+    public Long getTimeDeserialize() {
+        return timeDeserialize;
     }
 }
